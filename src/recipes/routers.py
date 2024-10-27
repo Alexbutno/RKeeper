@@ -19,14 +19,6 @@ async def get_recipes(token: str = Depends(oauth2_scheme)):
     return recipes
 
 
-# @router.get("/get_custom")
-# async def get_specific_recipe(recipe_id: RecipeID, token: str = Depends(oauth2_scheme)):
-#     token_payload = await decode_jwt_token(token)
-#     user_id = token_payload["user_id"]
-#     db_manager_mongo = await get_mongo_db_manager()
-#     recipes = await db_manager_mongo.user_get_recipes(user_id)
-
-
 @router.post("/add")
 async def add_recipe(recipe: Recipe, token: str = Depends(oauth2_scheme)):
     token_payload = await decode_jwt_token(token)
@@ -50,7 +42,7 @@ async def delete_recipe(recipe_id: RecipeID, token: str = Depends(oauth2_scheme)
 async def update_recipe(recipe_id: RecipeID, recipe: Recipe, token: str = Depends(oauth2_scheme)):
     token_payload = await decode_jwt_token(token)
     recipe_id = str(recipe_id.model_dump()["recipe_id"])
-    print(token_payload)
+
     user_id = token_payload["user_id"]
     db_manager_mongo = await get_mongo_db_manager()
 

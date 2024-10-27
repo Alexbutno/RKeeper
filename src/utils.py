@@ -2,6 +2,7 @@ import hashlib
 import logging
 
 import jwt
+from fastapi import HTTPException
 from pymongo import MongoClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
@@ -49,6 +50,26 @@ async def create_jwt_token(user_id: str) -> str:
 
 async def decode_jwt_token(token: str) -> dict:
     payload = jwt.decode(token, SECRET_JWT_KEY, algorithms=["HS256"])
+    if payload.get("type", None) is not None:
+        raise HTTPException(status_code=400, detail="Invalid jwt token")
+    return payload
+
+
+async def create_tmp_token(user_id: str, secret_code: int, token_exp_timestamp: int) -> str:
+    payload = {
+        "type": "tmp",
+        "user_id": user_id,
+        "secret_code": secret_code,
+        "token_exp_timestamp": token_exp_timestamp
+    }
+    token = jwt.encode(payload, SECRET_JWT_KEY, algorithm="HS256")
+    return token
+
+
+async def validate_tmp_token(token: str) -> dict:
+    payload = jwt.decode(token, SECRET_JWT_KEY, algorithms=["HS256"])
+    if payload.get("type", None) != "tmp":
+        raise HTTPException(status_code=400, detail="Invalid jwt token")
     return payload
 
 
@@ -60,3 +81,10 @@ async def hash_password(password: str) -> str:
 
 async def verify_password(password: str, hashed_password: str) -> bool:
     return await hash_password(password) == hashed_password
+
+
+def generate_secret_code():
+    from random import randint
+    a = randint(0, 10000)
+    print(a)
+    return a
