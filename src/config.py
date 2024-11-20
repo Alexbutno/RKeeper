@@ -14,5 +14,8 @@ MONGO_PORT = os.getenv('MONGO_PORT')
 MONGO_USER = os.getenv('MONGO_USER')
 MONGO_PASS = os.getenv('MONGO_PASS')
 MONGO_DB_NAME = os.getenv('MONGO_DB_NAME')
+SENDER_MAIL = os.getenv('SENDER_MAIL')
+PASSWORD_MAIL = os.getenv('PASSWORD_MAIL')
+
 
 ALEMBIC_URL = f''

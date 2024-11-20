@@ -15,7 +15,7 @@ services:
       POSTGRES_DB: ${DB_NAME}
       GSSLMODE: disable
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -34,7 +34,7 @@ services:
     command: >
       /bin/bash -c "
       alembic upgrade head &&
-      gunicorn src.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind=0.0.0.0:8080
+      uvicorn src.main:app --host 0.0.0.0 --port 8080 
       "
 
   mongo_db:
@@ -49,11 +49,36 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASS}
       MONGO_INITDB_DATABASE: ${MONGO_DB_NAME}
     healthcheck:
-      test: ["CMD-SHELL", "mongo --eval 'db.runCommand({ ping: 1 })'"]
+      test: [ "CMD-SHELL", "mongo --eval 'db.runCommand({ ping: 1 })'" ]
       interval: 10s
       timeout: 5s
       retries: 5
 
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"      # AMQP
+      - "15672:15672"    # Веб-интерфейс RabbitMQ
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: [ "CMD-SHELL", "rabbitmq-diagnostics -q ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  celery:
+    build:
+      context: .
+    container_name: celery
+    depends_on:
+      - rabbitmq
+    env_file:
+      - ./.env
+    command: >
+      celery -A src.celery_tasks.tasks worker --loglevel=info
 volumes:
   postgres_data:
   mongo_data:

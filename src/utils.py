@@ -6,6 +6,7 @@ from fastapi import HTTPException
 from pymongo import MongoClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
+from celery import Celery
 
 from src.config import DB_USER, DB_PASS, DB_HOST, DB_NAME, DB_PORT
 from src.config import MONGO_USER, MONGO_PASS, MONGO_HOST, MONGO_PORT, MONGO_DB_NAME
@@ -20,6 +21,9 @@ engine = create_async_engine(DATABASE_URL,
                                  "ssl": False
                              })
 async_session_maker = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)  # NOQA
+
+
+app = Celery('src.celery_tasks.tasks', broker='amqp://guest:guest@rabbitmq//')
 
 
 async def get_async_session() -> AsyncSession:
@@ -88,3 +92,32 @@ def generate_secret_code():
     a = randint(0, 10000)
     print(a)
     return a
+
+def check_string_format(input_string):
+    tre = input_string.split("@")
+    if len(tre) != 2:
+        return False
+    first_word = tre[0]
+    if len(first_word) > 64:
+        return False
+    if len(first_word) == 0:
+        return False
+    if first_word[0] in [".", "_", "-"]:
+        return False
+    if first_word[-1] == ".":
+        return False
+    tr = first_word.split(".")
+    for i in tr:
+        if len(i) == 0:
+            return False
+
+    second_word = tre[1]
+    we = second_word.split(".")
+    if len(tre) != 2:
+        return False
+    if not we[0].isalpha():
+        return False
+    if not we[1].isalpha():
+        return False
+
+    return True
